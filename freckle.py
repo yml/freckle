@@ -36,9 +36,14 @@ class Freckle(object):
 
     def request(self, url, method="GET", body=""):
         """Make a request to Freckle and return Python objects"""
-        resp, content = self.http.request(url, method, body, 
+        resp, content = self.http.request(url, method, body,
                                           headers=self.headers)
-        return self.parse_response(content)
+
+        content = self.parse_response(content)
+        if "link" in resp and "next" in resp['link']:
+            content += self.request(resp["link"].split(";")[0][1:-1])
+
+        return content
 
     def get_entries(self, **kwargs):
         """
@@ -80,7 +85,7 @@ class Freckle(object):
     def get_projects(self):
         """Get projects from Freckle"""
         return self.request("%s/projects.xml" % self.endpoint)
-    
+
     def parse_response(self, xml_content):
         """Parse XML response into Python"""
         content = []
@@ -105,7 +110,7 @@ class Freckle(object):
             return True
         else:
             return False
-        
+
     def date_as_python(self, val):
         """Convert text to date"""
         return datetime.date(*[int(x) for x in val.split("-")])
